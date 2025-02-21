@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 from twilio.rest import Client
 import boto3
 import mimetypes
@@ -8,6 +9,12 @@ import mimetypes
 AWS_ACCESS_KEY = os.environ["ACCESS_KEY"]
 AWS_SECRET_KEY = os.environ["SECRET_KEY"]
 BUCKET_NAME = os.environ["BUCKET_NAME"]
+ACCOUNT_SID = os.environ["TWILIO_ACCOUNT_SID"]
+AUTH_TOKEN = os.environ["TWILIO_AUTH_TOKEN"]
+TWILIO_NUMBER = os.environ["TWILIO_NUMBER"]
+client = Client(ACCOUNT_SID, AUTH_TOKEN)
+customers_file_path = "/text-marketing/test_customers.csv"
+
 
 # Initialize S3 client
 s3 = boto3.client("s3", aws_access_key_id=AWS_ACCESS_KEY,
@@ -22,33 +29,59 @@ def upload_image(file_path, object_name):
     return f"https://{BUCKET_NAME}.s3.amazonaws.com/{object_name}"
 
 
-# Example Usage
-image_url = upload_image("twilio_env/test_flyer.jpg", "test_flyer.jpg")
-print("Uploaded Image URL:", image_url)
+def send_bulk_sms(message_text, image_data=None, image_filename=None):
+    sent_count = 0
+    failed_numbers = []
+
+    media_url = None
+    if image_data and image_filename:
+        media_url = upload_image(image_data, image_filename)
+
+    with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        for row in reader:
+            phone_number = "+1" + row["Phone"]
+            unsubscribed = row["Unsubscribed"]
+
+            if unsubscribed == "true":
+                print(f"Skipping unsubscribed number: {phone_number}")
+                continue
+
+            try:
+                message = client.messages.create(
+                    body=message_text,
+                    from_=TWILIO_NUMBER,
+                    to=phone_number,
+                    media_url=[media_url] if media_url else None
+                )
+                sent_count += 1
+                print(f"Message sent to {phone_number}, SID: {message.sid}")
+
+            except Exception as e:
+                print(f"Failed to send message to {phone_number}: {str(e)}")
+                failed_numbers.append(phone_number)
+    return {
+        sent_count: sent_count,
+        failed_numbers: failed_numbers
+    }
 
 
-# Your Account SID and Auth Token from twilio.com/console
-account_sid = os.environ["TWILIO_ACCOUNT_SID"]
-auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-client = Client(account_sid, auth_token)
+def handler(event, context):
 
-csv_file_path = "text-marketing/test_customers.csv"
+    try:
+        # Parse incoming request body
+        body = json.loads(event["body"])
+        message_text = body.get("message")
+        image_data = body.get("image")
+        image_filename = body.get("image_filename")
 
-with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
-    reader = csv.DictReader(csvfile)
+        if not message_text:
+            return {"statusCode": 400, "body": json.dumps({"error": "Message text is required"})}
 
-    for row in reader:
-        phone_number = row["Phone"]
-        unsubscribed = row["Unsubscribed"].strip().lower()
+        result = send_bulk_sms(message_text, image_data, image_filename)
 
-        if unsubscribed == "true":
-            continue
+        return {"statusCode": 200, "body": json.dumps({"message": "Message sent successfully", "result": result})}
 
-    message = client.messages.create(
-        body="Hello, this is a test message with an image!",
-        from_='+13656591776',  # Your Twilio number
-        to='+14168079262',      # Customer's phone number
-        media_url=[image_url]
-    )
-
-    print(message.sid)
+    except Exception as e:
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
