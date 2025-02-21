@@ -37,7 +37,7 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
     if image_data and image_filename:
         media_url = upload_image(image_data, image_filename)
 
-    with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
+    with open(customers_file_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
 
         for row in reader:
