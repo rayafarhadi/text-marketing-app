@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Marketing App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        input, textarea, button { display: block; margin: 10px auto; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Send a Marketing Text</h2>
+    
+    <textarea id="message" placeholder="Enter your message"></textarea>
+    <input type="file" id="image" accept="image/*">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        async function sendMessage() {
+            const message = document.getElementById("message").value;
+            const imageInput = document.getElementById("image").files[0];
+
+            const formData = new FormData();
+            formData.append("message", message);
+            if (imageInput) {
+                formData.append("image", imageInput);
+            }
+
+            const response = await fetch("https://v0-new-project-ccon7easnn9.vercel.app/api/send_sms", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            alert(result.message);
+        }
+    </script>
+</body>
+</html>
