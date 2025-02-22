@@ -4,6 +4,7 @@ import json
 from twilio.rest import Client
 import boto3
 import mimetypes
+import base64
 
 # AWS IAM user credentials
 AWS_ACCESS_KEY = os.environ["ACCESS_KEY"]
@@ -16,16 +17,28 @@ client = Client(ACCOUNT_SID, AUTH_TOKEN)
 customers_file_path = "/text-marketing/test_customers.csv"
 
 
+def add_cors_headers(response):
+    response["headers"] = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
+    return response
+
 # Initialize S3 client
 s3 = boto3.client("s3", aws_access_key_id=AWS_ACCESS_KEY,
                   aws_secret_access_key=AWS_SECRET_KEY)
 
 
-def upload_image(file_path, object_name):
+def upload_image(image_data, object_name):
     """Uploads an image to S3 and makes it public."""
-    content_type, _ = mimetypes.guess_type(file_path)
-    s3.upload_file(file_path, BUCKET_NAME, object_name,
-                   ExtraArgs={"ContentType": content_type})
+    content_type, _ = mimetypes.guess_type(object_name)
+    s3.put_object(
+        Bucket=BUCKET_NAME,
+        Key=object_name,
+        Body=base64.b64decode(image_data),
+        ContentType=content_type
+    )
     return f"https://{BUCKET_NAME}.s3.amazonaws.com/{object_name}"
 
 
