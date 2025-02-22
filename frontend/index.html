@@ -40,7 +40,7 @@
         }
 
         async function sendToAPI(data) {
-            const response = await fetch("https://your-vercel-backend-url/api/send_sms", {
+            const response = await fetch("https://text-marketing-app.vercel.app/api/send_sms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
