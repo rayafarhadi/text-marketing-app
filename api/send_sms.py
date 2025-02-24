@@ -1,8 +1,8 @@
 import os
-import json
 import csv
 import boto3
 import mimetypes
+import re
 from fastapi import FastAPI, HTTPException
 from twilio.rest import Client
 import base64
@@ -52,6 +52,8 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
     media_url = None
     if image_data and image_filename:
         print("Uploading image...")
+        image_filename = image_filename.strip().lower().replace(" ", "_")
+        image_filename = re.sub(r"[^a-zA-Z0-9_.-]", "", image_filename)
         media_url = upload_image(image_data, image_filename)
         print(f"Image uploaded: {media_url}")
 
