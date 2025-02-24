@@ -32,7 +32,7 @@ def upload_image(image_data, object_name):
 # Twilio Configuration
 account_sid = os.environ["TWILIO_ACCOUNT_SID"]
 auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-twilio_number = os.environ["TWILIO_PHONE_NUMBER"]
+twilio_number = os.environ["TWILIO_NUMBER"]
 client = Client(account_sid, auth_token)
 
 CUSTOMERS_CSV_PATH = "test_customers.csv"
