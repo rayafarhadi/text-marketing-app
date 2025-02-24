@@ -38,7 +38,7 @@ auth_token = os.environ["TWILIO_AUTH_TOKEN"]
 twilio_number = os.environ["TWILIO_NUMBER"]
 client = Client(account_sid, auth_token)
 
-CUSTOMERS_CSV_PATH = "test_customers.csv"
+CUSTOMERS_CSV_PATH = "./test_customers.csv"
 
 
 def send_bulk_sms(message_text, image_data=None, image_filename=None):
@@ -49,8 +49,11 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
     # Upload image to S3 if provided
     media_url = None
     if image_data and image_filename:
+        print("Uploading image...")
         media_url = upload_image(image_data, image_filename)
+        print(f"Image uploaded: {media_url}")
 
+    print("Opening customers.csv...")
     with open(CUSTOMERS_CSV_PATH, newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
 
@@ -59,9 +62,11 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
             unsubscribed = row["unsubscribed"].strip().lower()
 
             if unsubscribed == "true":
+                print(f"Skipping unsubscribed customer: {phone_number}")
                 continue
 
             try:
+                print(f"Sending message to {phone_number}...")
                 message = client.messages.create(
                     body=message_text,
                     from_=twilio_number,
@@ -69,8 +74,10 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
                     media_url=[media_url] if media_url else None
                 )
                 sent_count += 1
+                print(f"Message sent to {phone_number}: {message.sid}")
 
             except Exception as e:
+                print(f"Failed to send message to {phone_number}: {e}")
                 failed_numbers.append(phone_number)
 
     return {
@@ -90,7 +97,8 @@ async def send_sms(data: dict):
 
         if not message_text:
             print("Error: Message text is required")
-            raise HTTPException(status_code=400, detail="Message text is required")
+            raise HTTPException(
+                status_code=400, detail="Message text is required")
 
         print("Calling send_bulk_sms...")
         result = send_bulk_sms(message_text, image_data, image_filename)
@@ -101,4 +109,3 @@ async def send_sms(data: dict):
     except Exception as e:
         print(f"Server Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
