@@ -57,8 +57,10 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
 
     print("Opening customers.csv...")
     with open(CUSTOMERS_CSV_PATH, newline="", encoding="utf-8") as csvfile:
+        print("Reading customers.csv...")
         reader = csv.DictReader(csvfile)
 
+        print("Sending messages...")
         for row in reader:
             phone_number = row["phone"]
             unsubscribed = row["unsubscribed"].strip().lower()
