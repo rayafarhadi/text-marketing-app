@@ -35,7 +35,7 @@ auth_token = os.environ["TWILIO_AUTH_TOKEN"]
 twilio_number = os.environ["TWILIO_PHONE_NUMBER"]
 client = Client(account_sid, auth_token)
 
-CUSTOMERS_CSV_PATH = "customers.csv"
+CUSTOMERS_CSV_PATH = "test_customers.csv"
 
 
 def send_bulk_sms(message_text, image_data=None, image_filename=None):
