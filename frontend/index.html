@@ -26,7 +26,18 @@
     <input type="file" id="image" accept="image/*" />
     <button onclick="sendMessage()">Send</button>
 
+    <textarea
+      id="debugLog"
+      style="width: 100%; height: 200px"
+      readonly
+    ></textarea>
+
     <script>
+      function logDebug(message) {
+        console.log(message);
+        document.getElementById("debugLog").value += message + "\n";
+      }
+
       async function sendMessage() {
         const message = document.getElementById("message").value;
         const imageInput = document.getElementById("image").files[0];
@@ -50,7 +61,7 @@
       }
 
       async function sendToAPI(data) {
-        console.log("Sending request to API:", data);
+        logDebug("Sending request to API:", JSON.stringify(data, null, 2));
 
         try {
           const response = await fetch(
@@ -64,13 +75,12 @@
             }
           );
 
-          console.log("Response status", response.status);
+          logDebug("Response status", response.status);
           const result = await response.json();
-          console.log("Response data:", result);
+          logDebug("Response data:", result);
           alert(result.message || result.error);
         } catch (error) {
-          console.error("Request failed:", error);
-          alert("Error sending message: " + error);
+          logDebug("Request failed:", error);
         }
       }
     </script>
