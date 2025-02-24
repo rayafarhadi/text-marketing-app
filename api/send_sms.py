@@ -83,17 +83,22 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
 async def send_sms(data: dict):
     """Handles API requests for sending SMS."""
     try:
+        print("Received API request.")
         message_text = data.get("message")
         image_data = data.get("image")
         image_filename = data.get("image_filename")
 
         if not message_text:
+            print("Error: Message text is required")
             raise HTTPException(status_code=400, detail="Message text is required")
 
+        print("Calling send_bulk_sms...")
         result = send_bulk_sms(message_text, image_data, image_filename)
 
+        print("Messages sent!")
         return {"message": "Messages sent!", "details": result}
 
     except Exception as e:
+        print(f"Server Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
