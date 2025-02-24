@@ -26,58 +26,86 @@
     <input type="file" id="image" accept="image/*" />
     <button onclick="sendMessage()">Send</button>
 
-    <textarea
-      id="debugLog"
-      style="width: 100%; height: 200px"
-      readonly
-    ></textarea>
+    <textarea id="debugLog" style="width: 100%; height: 200px" readonly></textarea>
 
     <script>
-      function logDebug(message) {
-        console.log(message);
-        document.getElementById("debugLog").value += message + "\n";
+      function logDebug(...messages) {
+        const logText = messages.map(msg => typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg).join(" ");
+        console.log(logText);
+        document.getElementById("debugLog").value += logText + "\n";
+      }
+
+      async function resizeImage(file) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = function (event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function () {
+              const canvas = document.createElement("canvas");
+              const maxWidth = 800;
+              const scaleSize = maxWidth / img.width;
+              canvas.width = maxWidth;
+              canvas.height = img.height * scaleSize;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const resizedImage = canvas.toDataURL("image/jpeg", 0.8);
+              logDebug("Resized image size:", resizedImage.length, "characters");
+              resolve(resizedImage);
+            };
+          };
+          reader.onerror = function (error) {
+            logDebug("Error reading file:", error);
+            resolve(null);
+          };
+        });
       }
 
       async function sendMessage() {
-        const message = document.getElementById("message").value;
+        const message = document.getElementById("message").value.trim();
         const imageInput = document.getElementById("image").files[0];
 
-        const formData = {
-          message: message,
-        };
+        if (!message) {
+          alert("Message cannot be empty!");
+          return;
+        }
+
+        const formData = { message: message };
+        logDebug("Message input:", message);
 
         if (imageInput) {
-          const reader = new FileReader();
-          reader.readAsDataURL(imageInput);
-          reader.onload = async function () {
-            const base64Image = reader.result.split(",")[1]; // Remove Base64 metadata
-            formData.image = base64Image;
-            formData.image_filename = imageInput.name;
-            await sendToAPI(formData);
-          };
+          logDebug("Image selected:", imageInput.name);
+          const resizedImage = await resizeImage(imageInput);
+          if (!resizedImage) {
+            alert("Failed to process image.");
+            return;
+          }
+          formData.image = resizedImage.split(",")[1]; // Remove Base64 metadata
+          formData.image_filename = imageInput.name.replace(/\s/g, "_").toLowerCase(); // Sanitize filename
         } else {
-          await sendToAPI(formData);
+          logDebug("No image selected.");
         }
+
+        logDebug("Final request data:", formData);
+        await sendToAPI(formData);
       }
 
       async function sendToAPI(data) {
-        logDebug("Sending request to API:", JSON.stringify(data, null, 2));
+        logDebug("Sending request to API:", data);
 
         try {
-          const response = await fetch(
-            "https://text-marketing-app.vercel.app/api/send_sms",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              mode: "cors",
-              credentials: "same-origin",
-              body: JSON.stringify(data),
-            }
-          );
+          const response = await fetch("https://text-marketing-app.vercel.app/api/send_sms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            mode: "cors",
+            credentials: "same-origin",
+            body: JSON.stringify(data),
+          });
 
-          logDebug("Response status", response.status);
+          logDebug("Response status:", response.status);
           const result = await response.json();
-          logDebug("Response data:", JSON.stringify(result, null, 2));
+          logDebug("Response data:", result);
           alert(result.message || result.error);
         } catch (error) {
           logDebug("Request failed:", error);
