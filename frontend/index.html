@@ -77,7 +77,7 @@
 
           logDebug("Response status", response.status);
           const result = await response.json();
-          logDebug("Response data:", result);
+          logDebug("Response data:", JSON.stringify(result, null, 2));
           alert(result.message || result.error);
         } catch (error) {
           logDebug("Request failed:", error);
