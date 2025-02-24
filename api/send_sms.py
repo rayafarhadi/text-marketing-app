@@ -3,6 +3,7 @@ import json
 import csv
 import boto3
 import mimetypes
+from fastapi import FastAPI, HTTPException
 from twilio.rest import Client
 import base64
 
@@ -76,43 +77,21 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
     }
 
 
-def handler(event, context):
-    """Handles API requests in a serverless function format."""
-    if event["httpMethod"] == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type"
-            },
-            "body": ""
-        }
-
+@app.post("/api/send_sms")
+async def send_sms(data: dict):
+    """Handles API requests for sending SMS."""
     try:
-        body = json.loads(event["body"])
-        message_text = body.get("message")
-        image_data = body.get("image")
-        image_filename = body.get("image_filename")
+        message_text = data.get("message")
+        image_data = data.get("image")
+        image_filename = data.get("image_filename")
 
         if not message_text:
-            return {
-                "statusCode": 400,
-                "headers": {"Access-Control-Allow-Origin": "*"},
-                "body": json.dumps({"error": "Message text is required"})
-            }
+            raise HTTPException(status_code=400, detail="Message text is required")
 
         result = send_bulk_sms(message_text, image_data, image_filename)
 
-        return {
-            "statusCode": 200,
-            "headers": {"Access-Control-Allow-Origin": "*"},
-            "body": json.dumps({"message": "Messages sent!", "details": result})
-        }
+        return {"message": "Messages sent!", "details": result}
 
     except Exception as e:
-        return {
-            "statusCode": 500,
-            "headers": {"Access-Control-Allow-Origin": "*"},
-            "body": json.dumps({"error": str(e)})
-        }
+        raise HTTPException(status_code=500, detail=str(e))
+
