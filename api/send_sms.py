@@ -38,7 +38,9 @@ auth_token = os.environ["TWILIO_AUTH_TOKEN"]
 twilio_number = os.environ["TWILIO_NUMBER"]
 client = Client(account_sid, auth_token)
 
-CUSTOMERS_CSV_PATH = "./test_customers.csv"
+# Get the absolute path to the project root (where customers.csv is located)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CUSTOMERS_CSV_PATH = os.path.join(PROJECT_ROOT, "test_customers.csv")
 
 
 def send_bulk_sms(message_text, image_data=None, image_filename=None):
