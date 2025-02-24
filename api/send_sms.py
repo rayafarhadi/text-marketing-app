@@ -7,6 +7,8 @@ from fastapi import FastAPI, HTTPException
 from twilio.rest import Client
 import base64
 
+app = FastAPI()
+
 # AWS S3 Configuration
 AWS_ACCESS_KEY = os.environ["ACCESS_KEY"]
 AWS_SECRET_KEY = os.environ["SECRET_KEY"]
