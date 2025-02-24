@@ -62,8 +62,8 @@ def send_bulk_sms(message_text, image_data=None, image_filename=None):
 
         print("Sending messages...")
         for row in reader:
-            phone_number = row["phone"]
-            unsubscribed = row["unsubscribed"].strip().lower()
+            phone_number = row["Phone"]
+            unsubscribed = row["Unsubscribed"].strip().lower()
 
             if unsubscribed == "true":
                 print(f"Skipping unsubscribed customer: {phone_number}")
